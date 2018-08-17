@@ -1,4 +1,4 @@
-module Main where
+module StringsFiles(stringsFiles) where
 
 import System.Directory
 -- import Control.Arrow.ListArrow
@@ -40,6 +40,6 @@ stringsFiles = do
   filterTypes doesFileExist l
 
 
-main:: IO ()
-main = stringsFiles >>= print
+-- main:: IO ()
+-- main = stringsFiles >>= print
 
