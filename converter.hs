@@ -28,7 +28,8 @@ exp2 = do
 parseFile:: String -> IO XmlTree
 parseFile fname = fmap head $ runX $ (readDocument [withValidate no, withCurl []] fname)
 
-expFile = fmap (!!0) stringsFiles
+-- expFile = fmap (!!3) stringsFiles
+expFile = return "/tmp/strings.xml"
 
 exp3 = do
   (fmap length $ parseFile =<< expFile) >>= print
@@ -89,12 +90,28 @@ xStringArrayFromXmlTree t@(NTree (XTag _ attrs) children)
           textFromXmlTree (NTree (XTag _ _) ((NTree (XText str) _):_)) = str
           textFromXmlTree _ = error "Not implemented yet"
 
+inflate:: XStringArray -> [XString]
+inflate (XStringArray k a) = foldr (\a acc -> (xStringFromItem a):acc) [] $ zip [0..] a
+  where xStringFromItem (n, s) = XString { keyXString = k ++ "[" ++ (show n) ++ "]"
+                                    , translatable = False
+                                    , text = s}
+
+inflateIO:: IOLA XStringArray XString
+inflateIO = IOLA $ \x -> return (inflate x)
+
 exp4 = do
-  str <- runIOLA  (children >>> (isA $ isTagOf "string")) $ undefined
-  array <- runIOLA (children >>> (isA $ isTagOf "string-array")) $ undefined
-  _ <- mapM (putStr.formatXmlTree) $ str
-  _ <- mapM (putStr.formatXmlTree) $ array
-  return ()
+  str <- runIOLA  (children
+                   >>> (isA $ isTagOf "string")
+                   >>> (arr xStringFromXmlTree)
+                  ) $ undefined
+  array <- runIOLA (children
+                    >>> (isA $ isTagOf "string-array")
+                    >>> (arr xStringArrayFromXmlTree)
+                    >>> inflateIO
+                   ) $ undefined
+--  _ <- mapM (putStr.formatXmlTree) $ str
+--  _ <- mapM (putStr.formatXmlTree) $ array
+  return $ str ++ array
 
 exp7 = do
   p <- runIOLA  (children >>> (isA $ \t -> (isTagOf "string" t) || (isTagOf "string-array" t))) $ undefined
@@ -107,11 +124,8 @@ exp8 = do
   _ <- mapM (putStr.formatXmlTree) $ p
   return ()
 
-exp9 = do
-  p <- runIOLA  (children >>> (isA $ isTagOf "string-array")) $ undefined
-  print $ map xStringArrayFromXmlTree p
+exp9 = runIOLA  (children >>> (isA $ isTagOf "string-array") >>> (arr xStringArrayFromXmlTree) >>> inflateIO) $ undefined
 --  _ <- mapM (putStr.formatXmlTree) $ p
-  return ()
 
-main = exp9
+main = exp4 >>= print
 
