@@ -1,4 +1,5 @@
-module StringsFiles(stringsFiles) where
+module StringsFiles(stringsFiles
+                   , valuesDirs) where
 
 import System.Directory
 -- import Control.Arrow.ListArrow
@@ -24,7 +25,6 @@ isAValuesDir path = do
   return (b && beginWithValues)
     where beginWithValues = "values" == take 6 path
 
-
 listDirectoriesOf:: (FilePath -> IO Bool) -> IO [FilePath]
 listDirectoriesOf f = do
   l <- (getCurrentDirectory >>= getDirectoryContents)
@@ -39,7 +39,7 @@ stringsFiles = do
   let l = map (++ "/strings.xml") vs
   filterTypes doesFileExist l
 
-
--- main:: IO ()
+  
+  -- main:: IO ()
 -- main = stringsFiles >>= print
 
