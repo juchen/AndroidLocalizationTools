@@ -65,6 +65,8 @@ children = (IOLA (\valuesDir -> fmap (:[]) (parseFile (valuesDir ++ "/strings.xm
 
 getXAttrName (NTree _ ((NTree (XText name) _):_)) = name
 
+
+
 data XString = XString { keyXString:: String
                        , translatable:: Bool
                        , text:: String
@@ -78,7 +80,9 @@ xStringFromXmlTree t@(NTree (XTag _ attrs) texts)
           translatable = case [attr | attr <- attrs, (isAttrOf "translatable" attr)] of
             [] -> True
             tr:_ -> (getXAttrName tr == "true")
-          text = ""
+          text = case texts of
+            (NTree (XText txt) _):_ -> txt
+            _ -> ""
 xStringFromXmlTree _ = error "Bad format"
 
 data XStringArray = XStringArray { keyXStringArray:: String
@@ -127,12 +131,10 @@ exp7 = do
   _ <- mapM (putStr.formatXmlTree) $ p
   return ()
 
-exp8 = do
-  valuesDir <- expValuesPath
-  p <- runIOLA  (children >>> (isA $ isTagOf "string")) $ valuesDir
---  print $ map xStringFromXmlTree p
-  _ <- mapM (putStr.formatXmlTree) $ p
-  return ()
+exp8 = expValuesPath >>= runIOLA  (children >>> (isA $ isTagOf "string"))
+--   print $ map xStringFromXmlTree p
+--  _ <- mapM (putStr.formatXmlTree) $ p
+--  return ()
 
 exp9 = expValuesPath >>= runIOLA  (children >>> (isA $ isTagOf "string-array") >>> (arr xStringArrayFromXmlTree) >>> inflateIO)
 --  _ <- mapM (putStr.formatXmlTree) $ p
@@ -140,13 +142,6 @@ exp9 = expValuesPath >>= runIOLA  (children >>> (isA $ isTagOf "string-array") >
 exp10 = expValuesPath >>=
   runIOLA  (children >>> (isA $ isTagOf "string") >>> (arr xStringFromXmlTree) >>> (isA translatable))
 
-mapFromAValuesDir:: String -> IO (Map.Map String String)
-mapFromAValuesDir dname = do
-  p <- runIOLA  (children >>> (isA $ isTagOf "string") >>> (arr xStringFromXmlTree) >>> (isA translatable)) $ (dname ++ "/strings.xml")
-  return $ toMap p
-
-result:: [FilePath] -> IO [(LangCode, ContentMap)]
-result l = map 
 
 type BigMap = (Map.Map TextKey (Map.Map LangCode TextContent))
 type SmallMap = Map.Map TextKey TextContent
@@ -168,7 +163,42 @@ inBigAndSmallMap lc _ v m = Just $ Map.insert lc v m
 mergeSmallIntoBig:: LangCode -> SmallMap -> BigMap -> BigMap
 mergeSmallIntoBig lc = Merge.merge (Merge.mapMaybeMissing (onlyInSmallMap lc)) (Merge.mapMaybeMissing onlyInBigMap) (Merge.zipWithMaybeMatched (inBigAndSmallMap lc))
 
+mapFromAValuesDir:: FilePath -> IO SmallMap
+mapFromAValuesDir dname = do
+  p <- runIOLA  (children >>> (isA $ isTagOf "string") >>> (arr xStringFromXmlTree) >>> (isA translatable)) $ dname
+  return $ toMap p
+
+
+parseValueDirs:: [FilePath] -> IO [(LangCode, SmallMap)]
+parseValueDirs l = do
+  mapM f l
+    where f dname = fmap (\x -> (dname, x)) (mapFromAValuesDir dname)
+
+mergeResult:: [(LangCode, SmallMap)] -> BigMap
 mergeResult = foldr (\(lc, smallMap) bigMap ->mergeSmallIntoBig lc smallMap bigMap) Map.empty
 
-main = exp10 >>= print
+bigMap:: [FilePath] -> IO BigMap
+bigMap paths = fmap mergeResult (parseValueDirs paths)
+
+toCSV paths = do
+  bm <- bigMap paths
+  l <- valuesDirs
+  mapM (putStrLn.f4) (("key", l):(f3 l bm))
+  where
+    -- A tab separated CSV is used because the can be comma in some strings.
+    f4:: (TextKey, [TextContent]) -> String
+    f4 (k, l) = foldl (\b a -> b ++ "\t\"" ++ a ++ "\"") k l
+    f3:: [LangCode] -> BigMap -> [(TextKey, [TextContent])]
+    f3 l bm = map (\(x1, x2) -> (x1, (f l x2))) (f2 bm)
+    f2:: BigMap -> [(TextKey, ContentMap)]
+    f2 bm = Map.toList bm
+    f:: [LangCode] -> ContentMap -> [TextContent]
+    f l cm = map (\k -> g (Map.lookup k cm)) l
+      where g (Just t) = t
+            g Nothing = ""
+
+-- main = expValuesPath >>= mapFromAValuesDir >>= print
+main = valuesDirs >>= toCSV
+-- main = valuesDirs >>= print
+
 

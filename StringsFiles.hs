@@ -16,13 +16,14 @@ filterFrom f = IOLA $ \a -> do
 
 
 filterTypes:: (FilePath -> IO Bool) -> [FilePath] -> IO [FilePath]
-filterTypes f l = runIOLA a 0 where
+filterTypes f l = runIOLA a undefined where
   a = (IOLA (const (return l))) >>> (filterFrom f)
 
 isAValuesDir:: FilePath -> IO Bool
 isAValuesDir path = do
-  b <- doesDirectoryExist path
-  return (b && beginWithValues)
+  b1 <- doesDirectoryExist path
+  b2 <- doesFileExist (path ++ "/strings.xml")
+  return (b1 && b2 && beginWithValues)
     where beginWithValues = "values" == take 6 path
 
 listDirectoriesOf:: (FilePath -> IO Bool) -> IO [FilePath]
@@ -39,7 +40,7 @@ stringsFiles = do
   let l = map (++ "/strings.xml") vs
   filterTypes doesFileExist l
 
-  
+
   -- main:: IO ()
 -- main = stringsFiles >>= print
 
