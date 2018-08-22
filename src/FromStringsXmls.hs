@@ -1,4 +1,10 @@
-module FromStringsXmls(toCSV) where
+module FromStringsXmls(toCSV
+                      , BigMap
+                      , SmallMap
+                      , ContentMap
+                      , TextKey
+                      , TextContent
+                      , LangCode) where
 
 import System.Environment
 import Text.XML.HXT.Core

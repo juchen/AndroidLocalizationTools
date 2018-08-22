@@ -31,7 +31,7 @@ library:
     - directory
 
 executables:
-  io_csv-localization-tool-exe:
+  to_csv:
     main:                to_csv.hs
     source-dirs:         app
     ghc-options:
@@ -40,6 +40,25 @@ executables:
     - -with-rtsopts=-N
     dependencies:
     - android-localization-tool
+
+  exp:
+    main: exp.hs
+    source-dirs: exp
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - android-localization-tool
+    - hxt
+    - hxt-curl
+    - containers
+    - directory
+    - xlsx
+    - conduit
+    - bytestring
+    - lens
+    - text
 
 tests:
   android-localization-tool-test:
