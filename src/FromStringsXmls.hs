@@ -4,7 +4,8 @@ module FromStringsXmls(toCSV
                       , ContentMap
                       , TextKey
                       , TextContent
-                      , LangCode) where
+                      , LangCode
+                      , maybeStringFromXmlTree) where
 
 import System.Environment
 import Text.XML.HXT.Core
@@ -55,6 +56,12 @@ xStringFromXmlTree t@(NTree (XTag _ attrs) texts)
             (NTree (XText txt) _):_ -> txt
             _ -> ""
 xStringFromXmlTree _ = error "Bad format"
+
+maybeStringFromXmlTree:: XmlTree -> Maybe XString
+maybeStringFromXmlTree t@(NTree (XTag _ _) _)
+  | True == isTagOf "string" t = Just $ xStringFromXmlTree t
+  | otherwise = Nothing
+maybeStringFromXmlTree _ = Nothing
 
 data XStringArray = XStringArray { keyXStringArray:: String
                                  , textArray:: [String]

@@ -29,6 +29,8 @@ library:
     - hxt-curl
     - containers
     - directory
+    - xlsx
+    - text
 
 executables:
   to_csv:
@@ -55,10 +57,9 @@ executables:
     - containers
     - directory
     - xlsx
-    - conduit
     - bytestring
-    - lens
     - text
+    - lens
 
 tests:
   android-localization-tool-test:
