@@ -1,11 +1,14 @@
-module FromStringsXmls(toCSV
-                      , BigMap
-                      , SmallMap
-                      , ContentMap
-                      , TextKey
-                      , TextContent
-                      , LangCode
-                      , maybeStringFromXmlTree) where
+module FromStringsXmls where
+--   (toCSV
+--                       , BigMap
+--                       , SmallMap
+--                       , ContentMap
+--                       , TextKey
+--                       , TextContent
+--                       , LangCode
+--                       , XString
+--                       , maybeStringFromXmlTree
+--                       , stringFromBigMap) where
 
 import System.Environment
 import Text.XML.HXT.Core
@@ -13,7 +16,7 @@ import Text.XML.HXT.Curl
 import Text.XML.HXT.Parser.XmlParsec as P
 import Text.XML.HXT.DOM.FormatXmlTree
 import Data.Tree.NTree.TypeDefs
-import qualified Data.Map.Strict as Map
+import qualified Data.Map.Strict as M
 import qualified Data.Map.Merge.Strict as Merge
 
 
@@ -57,11 +60,22 @@ xStringFromXmlTree t@(NTree (XTag _ attrs) texts)
             _ -> ""
 xStringFromXmlTree _ = error "Bad format"
 
-maybeStringFromXmlTree:: XmlTree -> Maybe XString
-maybeStringFromXmlTree t@(NTree (XTag _ _) _)
+maybeXStringFromXmlTree:: XmlTree -> Maybe XString
+maybeXStringFromXmlTree t@(NTree (XTag _ _) _)
   | True == isTagOf "string" t = Just $ xStringFromXmlTree t
   | otherwise = Nothing
 maybeStringFromXmlTree _ = Nothing
+
+xmlTreeFromXString:: XString -> XmlTree
+xmlTreeFromXString x = NTree (XTag (mkName "string")
+                             ( -- attrs:: NTrees
+                              (NTree (XAttr (mkName "name")) [NTree (XText k) []]):
+                              if t_able == False then [NTree (XAttr (mkName "translatable")) [NTree (XText "false") []]]
+                                                 else []
+                             )) [NTree (XText t) []]
+  where k = keyXString x
+        t_able = translatable x
+        t = text x
 
 data XStringArray = XStringArray { keyXStringArray:: String
                                  , textArray:: [String]
@@ -76,6 +90,7 @@ xStringArrayFromXmlTree t@(NTree (XTag _ attrs) children)
           textFromXmlTree (NTree (XTag _ _) ((NTree (XText str) _):_)) = str
           textFromXmlTree _ = error "Not implemented yet"
 
+
 inflate:: XStringArray -> [XString]
 inflate (XStringArray k a) = foldr (\a acc -> (xStringFromItem a):acc) [] $ zip [0..] a
   where xStringFromItem (n, s) = XString { keyXString = k ++ "[" ++ (show n) ++ "]"
@@ -85,13 +100,13 @@ inflate (XStringArray k a) = foldr (\a acc -> (xStringFromItem a):acc) [] $ zip 
 inflateIO:: IOLA XStringArray XString
 inflateIO = IOLA $ \x -> return (inflate x)
 
-toMap:: [XString] -> Map.Map String String
-toMap l = Map.fromList $ zip (map keyXString l) (map text l)
+toMap:: [XString] -> M.Map String String
+toMap l = M.fromList $ zip (map keyXString l) (map text l)
 
 
-type BigMap = (Map.Map TextKey (Map.Map LangCode TextContent))
-type SmallMap = Map.Map TextKey TextContent
-type ContentMap = Map.Map LangCode TextContent
+type BigMap = (M.Map TextKey (M.Map LangCode TextContent))
+type SmallMap = M.Map TextKey TextContent
+type ContentMap = M.Map LangCode TextContent
 type LangCode = String
 type TextKey = String
 type TextContent = String
@@ -101,10 +116,10 @@ onlyInBigMap:: TextKey -> ContentMap -> Maybe ContentMap
 onlyInBigMap _ m = Just m
 
 onlyInSmallMap:: LangCode -> TextKey -> TextContent -> Maybe ContentMap
-onlyInSmallMap lc _ v = Just $ Map.singleton lc v
+onlyInSmallMap lc _ v = Just $ M.singleton lc v
 
 inBigAndSmallMap:: LangCode -> TextKey -> TextContent -> ContentMap -> Maybe ContentMap
-inBigAndSmallMap lc _ v m = Just $ Map.insert lc v m
+inBigAndSmallMap lc _ v m = Just $ M.insert lc v m
 
 mergeSmallIntoBig:: LangCode -> SmallMap -> BigMap -> BigMap
 mergeSmallIntoBig lc = Merge.merge (Merge.mapMaybeMissing (onlyInSmallMap lc)) (Merge.mapMaybeMissing onlyInBigMap) (Merge.zipWithMaybeMatched (inBigAndSmallMap lc))
@@ -121,10 +136,16 @@ parseValueDirs l = do
     where f dname = fmap (\x -> (dname, x)) (mapFromAValuesDir dname)
 
 mergeResult:: [(LangCode, SmallMap)] -> BigMap
-mergeResult = foldr (\(lc, smallMap) bm ->mergeSmallIntoBig lc smallMap bm) Map.empty
+mergeResult = foldr (\(lc, smallMap) bm ->mergeSmallIntoBig lc smallMap bm) M.empty
 
 bigMap:: [FilePath] -> IO BigMap
 bigMap paths = fmap mergeResult (parseValueDirs paths)
+
+stringFromBigMap:: LangCode -> BigMap -> TextKey -> Maybe (Maybe String)
+stringFromBigMap lc bm k = do
+  cm <- M.lookup k bm
+  return $ do
+    M.lookup lc cm
 
 toCSV:: [FilePath] -> IO ()
 toCSV paths = do
@@ -138,9 +159,9 @@ toCSV paths = do
     f3:: [LangCode] -> BigMap -> [(TextKey, [TextContent])]
     f3 l bm = map (\(x1, x2) -> (x1, (f l x2))) (f2 bm)
     f2:: BigMap -> [(TextKey, ContentMap)]
-    f2 bm = Map.toList bm
+    f2 bm = M.toList bm
     f:: [LangCode] -> ContentMap -> [TextContent]
-    f l cm = map (\k -> g (Map.lookup k cm)) l
+    f l cm = map (\k -> g (M.lookup k cm)) l
       where g (Just t) = t
             g Nothing = ""
 

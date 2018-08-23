@@ -4,6 +4,7 @@ import Codec.Xlsx
 import qualified Data.Map as M
 import qualified Data.Text as T
 import FromStringsXmls
+import qualified Data.ByteString.Lazy as L
 
 getCellMap:: Xlsx -> CellMap
 getCellMap = _wsCells.snd.head._xlSheets
@@ -25,7 +26,9 @@ lookupRow n cm = M.lookup (n, 1) cm >> Just f
 --   Nothing -> Nothing
 
 maybeGetTextString:: Cell -> Maybe String
-maybeGetTextString (Cell _ (Just (CellText t)) _ _) = Just $ T.unpack t
+maybeGetTextString (Cell _ (Just (CellText t)) _ _)
+  | T.unpack t == "" = Nothing
+  | otherwise = Just $ T.unpack t
 maybeGetTextString _ = Nothing
 
 getTextString:: Cell -> String
@@ -51,4 +54,10 @@ fromCellMap cm = (M.fromList).f $ [2..]
           Just e -> e:(f ns)
           Nothing -> []
         f [] = []
+
+bigMapFromFile:: FilePath -> IO BigMap
+bigMapFromFile fn = do
+  bs <- L.readFile fn
+  return $ (fromCellMap.getCellMap.toXlsx) bs
+
 
