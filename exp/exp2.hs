@@ -69,7 +69,11 @@ replaceText' bm lc = changeUserState removeUsed >>> isA (not.shouldRemove)
 
 processWithLangCode:: BigMap -> LangCode -> IOStateArrow BigMap XmlTree XmlTree
 processWithLangCode bm lc = processBottomUp $
-  (isElem >>> hasName "string" >>> (replaceText bm lc)) `orElse` returnA
+  ifA (isElem >>> hasName "string")
+      (ifA (hasAttrValue "translatable" (== "false"))
+         returnA
+         (replaceText bm lc))
+      returnA
 -- processWithLangCode _ _ = processBottomUp $
 --    (isA isStringElem) `orElse` returnA
 --      where isStringElem (NTree (XTag s _) _) = ((show s) == "string")
@@ -96,7 +100,7 @@ addRestStrings lc = IOSLA $ (\s (bm, x) -> (runIOSLA (accBigMap bm lc)) s x)
         accBigMap bm lc = foldr cc returnA (fromBigMap bm lc)
         fromContentMap:: LangCode -> (TextKey, ContentMap) -> Maybe (TextKey, TextContent)
         fromContentMap lc (k, m) = do
-          v <- M.lookup k m
+          v <- M.lookup lc m
           return (k, v)
         fromBigMap::BigMap -> LangCode ->[(TextKey, TextContent)]
         fromBigMap bm lc = map unJust [c | c <- map (fromContentMap lc) (M.toList bm), c /= Nothing]
@@ -125,8 +129,9 @@ renameFileArrow = IOLA $ \(old, new) -> do
 exp2 = do
   xmlFileName:_ <- getArgs
   bm <- bigMapFromFile xmlFileName
-  restBm <- runXIOState (initialState bm) $ (stringsXmlArrow bm "/tmp/in.xml" "/tmp/out.xml" "values-ja-rJP")
+  restBm <- runXIOState (initialState bm) $ (stringsXmlArrow bm "/tmp/in.xml" "/tmp/out.xml" "values-zh-rCN")
                                             >>> getUserState
+  print $ head restBm
   print $ length.(M.toList).head $ restBm
   return ()
 

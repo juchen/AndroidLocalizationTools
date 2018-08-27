@@ -9,11 +9,11 @@ import qualified Data.ByteString.Lazy as L
 getCellMap:: Xlsx -> CellMap
 getCellMap = _wsCells.snd.head._xlSheets
 
-getRow:: Int -> CellMap -> [Cell]
-getRow n cm = f [1..]
-  where f (i:is) = case M.lookup (n, i) cm of
-          Just a -> a:(f is)
-          Nothing -> []
+getRow1:: CellMap -> [Cell]
+getRow1 cm = f [1..]
+  where f (i:is) = case M.lookup (1, i) cm of
+          Just a@(Cell _ (Just (CellText _)) _ _) -> a:(f is)
+          _ -> []
         f [] = []
 
 lookupRow:: Int -> CellMap -> Maybe (Int -> Maybe String)
@@ -39,7 +39,7 @@ parseRow:: Int -> CellMap -> Maybe (TextKey, ContentMap)
 parseRow n cm = do
   k <- (M.lookup (n, 1) cm >>= maybeGetTextString)
   f <- lookupRow n cm
-  let h@(_:langCodes) = map getTextString $ getRow 1 cm -- header
+  let h@(_:langCodes) = map getTextString $ getRow1 cm -- header
   let maybeTexts = map f [2..(length h)]
   let l = zip langCodes maybeTexts
   let fl = foldr g [] l
