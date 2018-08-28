@@ -29,13 +29,14 @@ replaceText bm lc = changeUserState removeUsed >>> isA (not.shouldRemove) >>> ar
     removeUsed x bm = M.delete (keyXString $ xStringFromXmlTree x) bm
     shouldRemove:: XmlTree -> Bool
     shouldRemove x = case stringFromBigMap lc bm (keyXString $ xStringFromXmlTree x) of
-      Just Nothing -> True
+      Just Nothing -> lc /= "values"
       _ -> False
     g:: XmlTree -> XmlTree
     g x = xmlTreeFromXString $ y'
       where y = xStringFromXmlTree x
             y' = case (stringFromBigMap lc bm (keyXString y)) of
-                  Just u -> y { text = unJust u }
+                  Just (Just u) -> y { text = u }
+                  Just Nothing -> y { text = "" }
                   Nothing -> y
 
 processTextReplacement:: BigMap -> LangCode -> IOStateArrow BigMap XmlTree XmlTree
