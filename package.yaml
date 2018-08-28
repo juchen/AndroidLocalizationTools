@@ -2,9 +2,9 @@ name:                android-localization-tool
 version:             0.1.0.0
 github:              "githubuser/android-localization-tool"
 license:             BSD3
-author:              "Author name here"
-maintainer:          "example@example.com"
-copyright:           "2018 Author name here"
+author:              "Henry Hsuan-Ju Chen"
+maintainer:          "hsuanju.ch@gmail.com"
+copyright:           "2018 Henry Hsuan-Ju Chen"
 
 extra-source-files:
 - README.md
