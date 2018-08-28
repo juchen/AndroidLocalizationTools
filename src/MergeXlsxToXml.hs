@@ -84,10 +84,9 @@ mergeXlsxToXml:: BigMap -> IOLA FilePath XmlTree
 mergeXlsxToXml bm = proc d -> do
           old <- arr (++ "/strings.xml") -< d
           new <- arr (++ "/strings.orig.xml") -< d
-          bak <- arr (++ "/strings.xml.bak") -< d
           _ <- renameFileArrow -< (old, new)
           x <- (IOLA $ \(lc, inf, outf) -> stringsXmlConversion bm inf outf lc) -< (d, new, old)
-          _ <- renameFileArrow -< (new, bak)
+          _ <- (arrIO removeFile) -< new
           returnA -< x
 
 -- A fail trial.
