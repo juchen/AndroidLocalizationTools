@@ -155,7 +155,7 @@ toCSV paths = do
   where
     -- A tab separated CSV is used because the can be comma in some strings.
     f4:: (TextKey, [TextContent]) -> String
-    f4 (k, l) = foldl (\b a -> b ++ "\t\"" ++ a ++ "\"") k l
+    f4 (k, l) = foldl (\b a -> b ++ "\t" ++ a ++ "") k l
     f3:: [LangCode] -> BigMap -> [(TextKey, [TextContent])]
     f3 l bm = map (\(x1, x2) -> (x1, (f l x2))) (f2 bm)
     f2:: BigMap -> [(TextKey, ContentMap)]

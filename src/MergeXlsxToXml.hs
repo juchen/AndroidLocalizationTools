@@ -75,9 +75,9 @@ stringsXmlConversion  bm inFile outFile lc =
   runXIOState (initialState bm) (stringsXmlArrow bm inFile outFile lc)
 
 renameFileArrow:: IOLA (FilePath, FilePath) (FilePath, FilePath)
-renameFileArrow = IOLA $ \(old, new) -> do
+renameFileArrow = arrIO $ \(old, new) -> do
   renameFile old new
-  return [(old, new)]
+  return (old, new)
 
 mergeXlsxToXml:: BigMap -> IOLA FilePath XmlTree
 mergeXlsxToXml bm = proc d -> do

@@ -44,6 +44,18 @@ executables:
     dependencies:
     - android-localization-tool
 
+  merge_xlsx:
+    main: mergeXlsx.hs
+    source-dirs: app
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - android-localization-tool
+    - hxt
+
+
   exp:
     main: exp.hs
     source-dirs: exp
@@ -73,6 +85,23 @@ executables:
     - android-localization-tool
     - hxt
     - hxt-curl
+    - containers
+    - directory
+
+  to_xlsx:
+    main: to_xlsx.hs
+    source-dirs: app
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - android-localization-tool
+    - xlsx
+    - lens
+    - bytestring
+    - text
+    - time
     - containers
     - directory
 
