@@ -50,7 +50,7 @@ pathsToXlsx paths = do
 proc = do
   args <- getArgs
   if args == [] then
-    putStr "\nUsage: to_xlsx <xlsx file>\n\n\tHas to be run in the src/main/res/ directory. Collect strings.xml files into an excel file.\n\n"
+    putStr "\nUsage: to_xlsx <xlsx file>\n\n\tCollect strings.xml files and generate an excel file.\n\tHas to be run in the src/main/res/ directory.\n\n"
     else do
       ct <- getPOSIXTime
       xlsx <- (valuesDirs >>= pathsToXlsx)

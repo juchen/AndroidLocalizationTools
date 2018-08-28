@@ -7,7 +7,11 @@ import MergeXlsxToXml
 import Text.XML.HXT.Core
 
 main = do
-  xlsxFn:_ <- getArgs
-  bm <- bigMapFromFile xlsxFn
-  runIOLA ((IOLA (const valuesDirs)) >>> (mergeXlsxToXml bm)) undefined
-  return ()
+  args <- getArgs
+  if args == []
+    then
+      putStrLn "\nUsage: merge_xlsx <xlsx file>\n\n\tUpdate all strings.xml file according to the specified xlsx file.\n\tNeed to be run in the src/main/res/ directory.\n"
+    else do
+      bm <- bigMapFromFile (head args)
+      runIOLA ((IOLA (const valuesDirs)) >>> (mergeXlsxToXml bm)) undefined
+      return ()
