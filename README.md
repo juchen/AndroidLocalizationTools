@@ -2,12 +2,45 @@
 
 ## Description
 
-`to_xlsx`: Find all `strings.xml` files and convert them into an excel file.
-`merge_xlsx`: Use a specified `xlsx` file to update the content of all `strings.xml` files.
+* `to_xlsx`: Find all `strings.xml` files and convert them into an excel file.
+* `merge_xlsx`: Use a specified `xlsx` file to update the content of all `strings.xml` files.
 
 These two applications have to be run in the directory `src/main/res` of an android project.
 
+## Insatllation
+
+The project is supposed to be built in
+[Stack](https://docs.haskellstack.org/en/stable/README/ "The Haskell Tool
+Stack") the haskell package tool.
+
+Stack can be installed simply by running the command
+
+```
+$ curl -sSL https://get.haskellstack.org/ | sh
+```
+
+Once you have the Stack installed. Just used
+
+```
+$ stack build
+```
+
+to build and find the executables in
+
+```
+.stack-work/install
+```
+
+Or, you can install the executables to your local bin path by
+
+```
+$ stack install
+```
+
+
 ## Usage
+
+Remember to change directory to `your-project/src/main/res` before running the commands
 
 ```
 Usage: merge_xlsx <xlsx file>
@@ -30,19 +63,17 @@ Usage: to_xlsx <xlsx file>
 1. All the cells in the `xlsx` file must have their format being "plain text",
    otherwise, the tools won't recognize them and will treat them as "Nothing".
 
-2. Only translatable `string`s will be exported to the `xlsx` file. `strings`s with
-   `translatable == "false"` and `string-array`s are not exported.
+2. Only translatable `<string>`s will be exported to the `xlsx` file. `<string>`s with
+   `translatable == "false"` and `<string-array>`s are not exported.
 
-3. Only translatable `string`s will be updated. `strings`s with `translatable == "false"`
+3. Only translatable `<string>`s will be updated. `<string>`s with `translatable == "false"` and `<string-array>`
    will not be updated no matter whether there are corresponding entries in the `xlsx` file.
 
 4. Any entry that is not used to update a `strings.xml` file will be appended to the `strings.xml` file.
 
 5. An XML `string` element will be removed if there is a corresponding entry in the `xlsx` file and 
-   the content is empty.
+   the content is empty, except for the default `values/strings.xml`, in which a `string` element with empty
+   content is kept.
 
-6. An XML `string` element will empty content will be exported as an entry with empty content in the `xlsx` file.
-   This file will remove the XML `string`  element if used to update `strings.xml` files.
-   So, XML `string` elements with empty contents should be voided.
 
 

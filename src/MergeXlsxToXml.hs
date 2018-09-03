@@ -23,7 +23,9 @@ writeConfig = [withIndent yes
 
 
 replaceText:: BigMap -> LangCode -> IOStateArrow BigMap XmlTree XmlTree
-replaceText bm lc = changeUserState removeUsed >>> isA (not.shouldRemove) >>> arr g
+replaceText bm lc = changeUserState removeUsed >>> (ifA (hasAttrValue "translatable" (== "false"))
+                                                        returnA
+                                                        (isA (not.shouldRemove) >>> arr g))
   where
     removeUsed:: XmlTree -> BigMap -> BigMap
     removeUsed x bm = M.delete (keyXString $ xStringFromXmlTree x) bm
@@ -42,9 +44,7 @@ replaceText bm lc = changeUserState removeUsed >>> isA (not.shouldRemove) >>> ar
 processTextReplacement:: BigMap -> LangCode -> IOStateArrow BigMap XmlTree XmlTree
 processTextReplacement bm lc = processBottomUp $
   ifA (isElem >>> hasName "string")
-      (ifA (hasAttrValue "translatable" (== "false"))
-         returnA
-         (replaceText bm lc))
+      (replaceText bm lc)
       returnA
 
 addRestStrings:: LangCode -> IOStateArrow s (BigMap, XmlTree) XmlTree

@@ -34,16 +34,6 @@ library:
     - bytestring
 
 executables:
-  to_csv:
-    main:                to_csv.hs
-    source-dirs:         app
-    ghc-options:
-    - -threaded
-    - -rtsopts
-    - -with-rtsopts=-N
-    dependencies:
-    - android-localization-tool
-
   merge_xlsx:
     main: mergeXlsx.hs
     source-dirs: app
@@ -55,38 +45,6 @@ executables:
     - android-localization-tool
     - hxt
 
-
-  exp:
-    main: exp.hs
-    source-dirs: exp
-    ghc-options:
-    - -threaded
-    - -rtsopts
-    - -with-rtsopts=-N
-    dependencies:
-    - android-localization-tool
-    - hxt
-    - hxt-curl
-    - containers
-    - directory
-    - xlsx
-    - bytestring
-    - text
-    - lens
-
-  exp2:
-    main: exp2.hs
-    source-dirs: exp
-    ghc-options:
-    - -threaded
-    - -rtsopts
-    - -with-rtsopts=-N
-    dependencies:
-    - android-localization-tool
-    - hxt
-    - hxt-curl
-    - containers
-    - directory
 
   to_xlsx:
     main: to_xlsx.hs
@@ -104,6 +62,62 @@ executables:
     - time
     - containers
     - directory
+
+# The are difficulties for CSV file to handle special characters like double quote, comma, and etc.
+# This executable can be built but can not achieve the expected result.
+#  to_csv:
+#    main:                to_csv.hs
+#    source-dirs:         app
+#    ghc-options:
+#    - -threaded
+#    - -rtsopts
+#    - -with-rtsopts=-N
+#    dependencies:
+#    - android-localization-tool
+
+#  exp:
+#    main: exp.hs
+#    source-dirs: exp
+#    ghc-options:
+#    - -threaded
+#    - -rtsopts
+#    - -with-rtsopts=-N
+#    dependencies:
+#    - android-localization-tool
+#    - hxt
+#    - hxt-curl
+#    - containers
+#    - directory
+#    - xlsx
+#    - bytestring
+#    - text
+#    - lens
+#
+#  exp2:
+#    main: exp2.hs
+#    source-dirs: exp
+#    ghc-options:
+#    - -threaded
+#    - -rtsopts
+#    - -with-rtsopts=-N
+#    dependencies:
+#    - android-localization-tool
+#    - hxt
+#    - hxt-curl
+#    - containers
+#    - directory
+#
+#
+#  exp4:
+#    main: exp4.hs
+#    source-dirs: exp
+#    ghc-options:
+#    - -threaded
+#    - -rtsopts
+#    - -with-rtsopts=-N
+#    dependencies:
+#    - android-localization-tool
+#    - parsec
 
 tests:
   android-localization-tool-test:
