@@ -7,7 +7,7 @@
 
 These two applications have to be run in the directory `src/main/res` of an android project.
 
-## Insatllation
+## Installation
 
 The project is supposed to be built in
 [Stack](https://docs.haskellstack.org/en/stable/README/ "The Haskell Tool
@@ -19,13 +19,17 @@ Stack can be installed simply by running the command
 $ curl -sSL https://get.haskellstack.org/ | sh
 ```
 
-Once you have the Stack installed. Just used
+For more details, refer to the [official installation
+guide](https://docs.haskellstack.org/en/stable/install_and_upgrade/)
+
+Once you have the Stack installed. Clone this project and then just
 
 ```
+$ cd android-localization-tool
 $ stack build
 ```
 
-to build and find the executables in
+to build. If the build is a success, find the executables in
 
 ```
 .stack-work/install
@@ -71,8 +75,8 @@ Usage: to_xlsx <xlsx file>
 
 4. Any entry that is not used to update a `strings.xml` file will be appended to the `strings.xml` file.
 
-5. An XML `string` element will be removed if there is a corresponding entry in the `xlsx` file and 
-   the content is empty, except for the default `values/strings.xml`, in which a `string` element with empty
+5. An XML `<string>` element will be removed if there is a corresponding entry in the `xlsx` file and 
+   the content is empty, except for the default `values/strings.xml`, in which a `<string>` element with empty
    content is kept.
 
 
