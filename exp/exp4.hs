@@ -1,6 +1,7 @@
 module Main where
 
 import System.Environment
+import System.IO
 import FromXlsx
 import StringsFiles
 import MergeXlsxToXml
@@ -12,7 +13,9 @@ expArrow = readDocument [] "/tmp/tmp.xml" >>> writeDocumentToString [withIndent 
 
 exp1 = do
   s <- runX expArrow
-  putStr $ either (\_ -> "Error") (prettyShow 4) $ runParser xmlText () "" $ head s
+  putStr $ indentAnd160 4 $ head s
+  withFile "/tmp/tmp2.xml" WriteMode $ \h -> do
+    hPutStr h $ indentAnd160 4 $ head s
 
 leadingSpace:: Parsec String u Int
 leadingSpace = fmap length $ many (char ' ')
@@ -42,5 +45,7 @@ prettyShow tabwidth ls = concat $ map prettyLine ls
     prettyLine:: (Int, String) -> String
     prettyLine (i, s) = (concat $ take i $ repeat (take tabwidth $ repeat ' ')) ++ s ++ "\n"
 
+indentAnd160:: Int -> String -> String
+indentAnd160 i xml = either (\_ -> "Error") (prettyShow i) $ runParser xmlText () "" xml
 
 main = exp1

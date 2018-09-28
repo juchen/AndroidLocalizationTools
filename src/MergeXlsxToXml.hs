@@ -1,6 +1,7 @@
 {-# LANGUAGE Arrows #-}
 module MergeXlsxToXml where
 
+import System.IO
 import Text.XML.HXT.Core
 import FromStringsXmls
 import qualified Data.Map.Strict as M
@@ -83,6 +84,13 @@ stringsXmlArrowString bm inFile lc = stringsXmlArrow' bm inFile lc
 stringsXmlConversion:: BigMap -> FilePath -> FilePath -> LangCode -> IO [XmlTree]
 stringsXmlConversion  bm inFile outFile lc =
   runXIOState (initialState bm) (stringsXmlArrow bm inFile outFile lc)
+
+stringsXmlConversion':: Int -> BigMap -> FilePath -> FilePath -> LangCode -> IO [XmlTree]
+stringsXmlConversion' tabwidth bm inFile outFile lc = do
+  s:_ <- runXIOState (initialState bm) (stringsXmlArrowString bm inFile lc)
+  withFile outFile WriteMode $ \h -> do
+    hPutStr h $ indentAnd160 tabwidth s
+  return []
 
 renameFileArrow:: IOLA (FilePath, FilePath) (FilePath, FilePath)
 renameFileArrow = arrIO $ \(old, new) -> do
