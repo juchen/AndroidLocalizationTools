@@ -7,6 +7,7 @@ import qualified Data.Map.Strict as M
 import Text.XML.HXT.Arrow.XmlState.RunIOStateArrow
 import System.Directory
 
+unJust:: Maybe a -> a
 unJust (Just x) = x
 unJust Nothing = error "Bad situation"
 
@@ -65,11 +66,19 @@ processAddingText lc = processBottomUp ((isElem >>> hasName "resources"
                                              >>> (getUserState &&& returnA)
                                              >>> addRestStrings lc) `orElse` returnA)
 
+stringsXmlArrow':: BigMap -> FilePath -> LangCode -> IOStateArrow BigMap XmlTree XmlTree
+stringsXmlArrow' bm inFile lc = readDocument readConfig inFile
+                                >>> processTextReplacement bm lc
+                                >>> processAddingText lc
+
 stringsXmlArrow:: BigMap -> FilePath -> FilePath -> LangCode -> IOStateArrow BigMap XmlTree XmlTree
-stringsXmlArrow bm inFile outFile lc = readDocument readConfig inFile
-                            >>> processTextReplacement bm lc
-                            >>> processAddingText lc
-                            >>> writeDocument writeConfig outFile
+stringsXmlArrow bm inFile outFile lc = stringsXmlArrow' bm inFile lc
+                                       >>> writeDocument writeConfig outFile
+
+stringsXmlArrowString:: BigMap -> FilePath -> LangCode -> IOStateArrow BigMap XmlTree String
+stringsXmlArrowString bm inFile lc = stringsXmlArrow' bm inFile lc
+                                     >>> writeDocumentToString writeConfig 
+
 
 stringsXmlConversion:: BigMap -> FilePath -> FilePath -> LangCode -> IO [XmlTree]
 stringsXmlConversion  bm inFile outFile lc =
