@@ -32,6 +32,7 @@ library:
     - xlsx
     - text
     - bytestring
+    - parsec
 
 executables:
   merge_xlsx:
@@ -73,7 +74,6 @@ executables:
     dependencies:
     - android-localization-tool
     - hxt
-    - parsec
 
 # The are difficulties for CSV file to handle special characters like double quote, comma, and etc.
 # This executable can be built but can not achieve the expected result.

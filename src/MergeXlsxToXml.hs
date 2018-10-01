@@ -7,6 +7,7 @@ import FromStringsXmls
 import qualified Data.Map.Strict as M
 import Text.XML.HXT.Arrow.XmlState.RunIOStateArrow
 import System.Directory
+import Text.Parsec
 
 unJust:: Maybe a -> a
 unJust (Just x) = x
@@ -67,26 +68,30 @@ processAddingText lc = processBottomUp ((isElem >>> hasName "resources"
                                              >>> (getUserState &&& returnA)
                                              >>> addRestStrings lc) `orElse` returnA)
 
-stringsXmlArrow':: BigMap -> FilePath -> LangCode -> IOStateArrow BigMap XmlTree XmlTree
-stringsXmlArrow' bm inFile lc = readDocument readConfig inFile
+readAndProcessXmlArrow:: BigMap -> FilePath -> LangCode -> IOStateArrow BigMap XmlTree XmlTree
+readAndProcessXmlArrow bm inFile lc = readDocument readConfig inFile
                                 >>> processTextReplacement bm lc
                                 >>> processAddingText lc
 
+-- Write to a file directly.
 stringsXmlArrow:: BigMap -> FilePath -> FilePath -> LangCode -> IOStateArrow BigMap XmlTree XmlTree
-stringsXmlArrow bm inFile outFile lc = stringsXmlArrow' bm inFile lc
+stringsXmlArrow bm inFile outFile lc = readAndProcessXmlArrow bm inFile lc
                                        >>> writeDocument writeConfig outFile
 
+-- Convert to a string for further processing.
 stringsXmlArrowString:: BigMap -> FilePath -> LangCode -> IOStateArrow BigMap XmlTree String
-stringsXmlArrowString bm inFile lc = stringsXmlArrow' bm inFile lc
-                                     >>> writeDocumentToString writeConfig 
+stringsXmlArrowString bm inFile lc = readAndProcessXmlArrow bm inFile lc
+                                     >>> writeDocumentToString writeConfig
 
 
+-- Convert into file directly without a post process.
 stringsXmlConversion:: BigMap -> FilePath -> FilePath -> LangCode -> IO [XmlTree]
 stringsXmlConversion  bm inFile outFile lc =
   runXIOState (initialState bm) (stringsXmlArrow bm inFile outFile lc)
 
-stringsXmlConversion':: Int -> BigMap -> FilePath -> FilePath -> LangCode -> IO [XmlTree]
-stringsXmlConversion' tabwidth bm inFile outFile lc = do
+-- Convert to string and do a post process for indentation and special char substitution.
+stringsXmlConversionPP:: Int -> BigMap -> FilePath -> FilePath -> LangCode -> IO [XmlTree]
+stringsXmlConversionPP tabwidth bm inFile outFile lc = do
   s:_ <- runXIOState (initialState bm) (stringsXmlArrowString bm inFile lc)
   withFile outFile WriteMode $ \h -> do
     hPutStr h $ indentAnd160 tabwidth s
@@ -102,7 +107,7 @@ mergeXlsxToXml bm = proc d -> do
           old <- arr (++ "/strings.xml") -< d
           new <- arr (++ "/strings.orig.xml") -< d
           _ <- renameFileArrow -< (old, new)
-          x <- (IOLA $ \(lc, inf, outf) -> stringsXmlConversion bm inf outf lc) -< (d, new, old)
+          x <- (IOLA $ \(lc, inf, outf) -> stringsXmlConversionPP 4 bm inf outf lc) -< (d, new, old)
           _ <- (arrIO removeFile) -< new
           returnA -< x
 
@@ -121,3 +126,37 @@ replaceText' bm lc = changeUserState removeUsed >>> isA (not.shouldRemove)
     shouldRemove x = case stringFromBigMap lc bm (keyXString $ xStringFromXmlTree x) of
       Just Nothing -> True
       _ -> False
+
+
+--- For post process ---------------------------------------------------------------
+
+nbsp = '\160'
+
+transNbsp:: Parsec String u String
+transNbsp = do
+  _ <- char nbsp
+  return "&#160;"
+
+trailingText:: Parsec String u String
+trailingText = do
+  fmap concat $ many (try transNbsp <|> (fmap (:[]) $ noneOf [nbsp, '\n']))
+
+xmlText:: Parsec String u [(Int, String)]
+xmlText = manyTill aline eof
+  where aline = do
+                  i <- leadingSpace
+                  s <- trailingText
+                  _ <- try (char '\n')
+                  return (i `div` 2, s)
+
+prettyShow:: Int -> [(Int, String)] -> String
+prettyShow tabwidth ls = concat $ map prettyLine ls
+  where
+    prettyLine:: (Int, String) -> String
+    prettyLine (i, s) = (concat $ take i $ repeat (take tabwidth $ repeat ' ')) ++ s ++ "\n"
+
+indentAnd160:: Int -> String -> String
+indentAnd160 i xml = either (\_ -> "Error") (prettyShow i) $ runParser xmlText () "" xml
+
+leadingSpace:: Parsec String u Int
+leadingSpace = fmap length $ many (char ' ')
