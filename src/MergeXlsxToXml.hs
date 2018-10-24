@@ -90,22 +90,22 @@ stringsXmlConversion  bm inFile outFile lc =
   runXIOState (initialState bm) (stringsXmlArrow bm inFile outFile lc)
 
 -- Convert to string and do a post process for indentation and special char substitution.
-stringsXmlConversionPP:: Int -> BigMap -> FilePath -> FilePath -> LangCode -> IO [XmlTree]
+stringsXmlConversionPP:: Int -> BigMap -> FilePath -> FilePath -> LangCode -> IO [String]
 stringsXmlConversionPP tabwidth bm inFile outFile lc = do
   s:_ <- runXIOState (initialState bm) (stringsXmlArrowString bm inFile lc)
   withFile outFile WriteMode $ \h -> do
     hPutStr h $ indentAnd160 tabwidth s
-  return []
+  return [s]
 
 renameFileArrow:: IOLA (FilePath, FilePath) (FilePath, FilePath)
 renameFileArrow = arrIO $ \(old, new) -> do
   renameFile old new
   return (old, new)
 
-mergeXlsxToXml:: BigMap -> IOLA FilePath XmlTree
+mergeXlsxToXml:: BigMap -> IOLA FilePath String
 mergeXlsxToXml bm = proc d -> do
           old <- arr (++ "/strings.xml") -< d
-          new <- arr (++ "/strings.orig.xml") -< d
+          new <- arr (++ "/strings.xml.orig") -< d
           _ <- renameFileArrow -< (old, new)
           x <- (IOLA $ \(lc, inf, outf) -> stringsXmlConversionPP 4 bm inf outf lc) -< (d, new, old)
           _ <- (arrIO removeFile) -< new
@@ -121,7 +121,7 @@ replaceText' bm lc = changeUserState removeUsed >>> isA (not.shouldRemove)
                                           Nothing -> returnA)) `orElse` returnA))
   where
     removeUsed:: XmlTree -> BigMap -> BigMap
-    removeUsed x bm = M.delete (keyXString $ xStringFromXmlTree x) bm
+    removeUsed x bm' = M.delete (keyXString $ xStringFromXmlTree x) bm'
     shouldRemove:: XmlTree -> Bool
     shouldRemove x = case stringFromBigMap lc bm (keyXString $ xStringFromXmlTree x) of
       Just Nothing -> True
