@@ -104,7 +104,7 @@ toMap:: [XString] -> M.Map String String
 toMap l = M.fromList $ zip (map keyXString l) (map text l)
 
 
-type BigMap = (M.Map TextKey (M.Map LangCode TextContent))
+type BigMap = M.Map TextKey ContentMap
 type SmallMap = M.Map TextKey TextContent
 type ContentMap = M.Map LangCode TextContent
 type LangCode = String
